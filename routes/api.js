@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var populate = require('../lib/populate');
 
-router.get("/", function(req, res) {
+router.get("/populate", function(req, res) {
 
     populate();
     
