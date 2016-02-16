@@ -1,9 +1,13 @@
 var express = require('express');
 var router = express.Router();
 var populate = require('../lib/populate');
+var tail = require('terminus').tail;
+var toArray = require('stream-to-array')
+var async = require('async');
 
 var urls = require('../lib/urls');
 var redis = require('redis');
+require("redis-scanstreams")(redis);
 var client = redis.createClient(urls.redis_port, urls.redis_host);
 
 // A simple summary of the API
@@ -43,13 +47,88 @@ router.get(new RegExp('/get/([-\\w\\._]+)$'), function(req, res) {
     })
 })
 
+// List canonical mappings
+
+router.get('/list', function(req, res) {
+    var limit = req.query.limit || 10;
+    var offset = req.query.offset || 0;
+    toArray(
+	client.scan({ pattern: "sysreq:*" }),
+	function(err, arr) {
+	    if (err) {
+		res.status(500)
+		    .render('error', {
+			message: 'cannot connect to database',
+			error: { }
+		    });
+
+	    } else {
+		arr = arr.map(function(x) { return x.replace("sysreq:", "") });
+		arr.sort();
+		res.set('Content-Type', 'application/json')
+		    .send(arr);
+	    }
+	}
+    )
+})
+
 // Map a SystemRequirements field to canonical system requirement names
 // We need to load all records from the Redis DB, and search them
 
 var re1 = new RegExp('/map/(.*)$');
 
 router.get(re1, function(req, res) {
+    var query = req.params[0];
+    toArray(
+	client.scan({ pattern: "sysreq:*" }),
+	function(err, arr) {
+	    if (err) {
+		res.status(404)
+		    .set('Content-Type', 'application/json')
+		    .send({ error: "not found" });
 
+	    } else {
+		async.map(arr, try_map, function(err, results) {
+		    if (results.indexOf(true) == -1) {
+			res.status(404)
+			    .set('Content-Type', 'application/json')
+			    .send({ error: "not found" });
+		    }
+		})
+	    }
+	}
+    );
+
+    function try_map(item, callback) {
+	var name = item.replace("sysreq:", "");
+	client.get(item, function(err, entry) {
+	    if (err) { callback(err); return; }
+	    entry = JSON.parse(entry);
+	    var reqs = entry[name].sysreqs;
+	    if (reqs.constructor !== Array) { reqs = [ reqs ]; }
+	    for (var p = 0; p < reqs.length; p++) {
+		req = reqs[p];
+		var gotit = false;
+
+		// Regular expression or not
+		if (req.length >= 2 && req[0] == '/' &&
+		    req.substr(req.length - 1) == '/') {
+		    var re = new RegExp(req.slice(1, -1));
+		    gotit = re.test(query);
+
+		} else {
+		    gotit = query.indexOf(req) > -1;
+		}
+
+		if (gotit) {
+		    res.set('Content-Type', 'application/json')
+			.send({ sysreq: name });
+		}
+	    }
+
+	    callback(null, false)
+	})
+    }
 })
 
 // Get canonical system requirement names for a CRAN package
