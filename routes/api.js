@@ -88,19 +88,17 @@ router.get(re1, function(req, res) {
 		    .send({ error: "not found" });
 
 	    } else {
-		async.map(arr, try_map, function(err, results) {
-		    if (results.indexOf(true) == -1) {
-			res.status(404)
-			    .set('Content-Type', 'application/json')
-			    .send({ error: "not found" });
-		    }
+		arr = arr.map(function(x) { return x.replace("sysreq:", "") });
+		async.filter(arr, try_map, function(results) {
+		    res.set('Content-Type', 'application/json')
+			.send(results);
 		})
 	    }
 	}
     );
 
-    function try_map(item, callback) {
-	var name = item.replace("sysreq:", "");
+    function try_map(name, callback) {
+	var item = "sysreq:" + name;
 	client.get(item, function(err, entry) {
 	    if (err) { callback(err); return; }
 	    entry = JSON.parse(entry);
@@ -108,25 +106,27 @@ router.get(re1, function(req, res) {
 	    if (reqs.constructor !== Array) { reqs = [ reqs ]; }
 	    for (var p = 0; p < reqs.length; p++) {
 		req = reqs[p];
+		console.log(req);
 		var gotit = false;
 
 		// Regular expression or not
-		if (req.length >= 2 && req[0] == '/' &&
-		    req.substr(req.length - 1) == '/') {
-		    var re = new RegExp(req.slice(1, -1));
+		if (req.length >= 2 && req[0] == '/') {
+		    var restr = req.replace(
+			/^\/(.*)\/([a-zA-Z]*)$/,
+			function(match, $1, $2) { return $1 }
+		    );
+		    var re = new RegExp(restr, "i");
 		    gotit = re.test(query);
 
 		} else {
 		    gotit = query.indexOf(req) > -1;
 		}
 
-		if (gotit) {
-		    res.set('Content-Type', 'application/json')
-			.send({ sysreq: name });
-		}
+		console.log(gotit);
+		if (gotit) { callback(true); return; }
 	    }
 
-	    callback(null, false)
+	    callback(false);
 	})
     }
 })
