@@ -41,14 +41,20 @@ encoded.
   List all mapping entries.
 
 * `GET /map` / <string>  
-  Map a `SystemRequirements` field to canonical entries.
+  Map a `SystemRequirements` field to canonical entries. It returns a list
+  of full entries. <string> may contains arbitrary characters, but potentially
+  it has to be URL encoded.
 
 * `GET /populate`  
   Refresh the database from the `r-hub/sysreqs` repository
   at GitHub.
 
-* `GET /pkg` / <package [ / <os> ]  
+* `GET /pkg` / <package>  
   Map a single R packge, potentially on a single operating system.
+  <package> must be a single CRAN package.
+
+* `GET /pkg` / <package>  / <os>   
+  Get the operating system specific packages that are needed for a CRAN package.
 
 ## EXAMPLES
 
