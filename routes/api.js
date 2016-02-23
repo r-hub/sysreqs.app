@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var populate = require('../lib/populate');
+var get_platform = require('../lib/get-platform');
+var match_platform = require('../lib/match-platform');
 var tail = require('terminus').tail;
 var toArray = require('stream-to-array')
 var async = require('async');
@@ -76,59 +78,57 @@ router.get('/list', function(req, res) {
 var re1 = new RegExp('/map/(.*)$');
 router.get(re1, function(req, res) {
     query = req.params[0];
-    map(req, res, query);
+    map(query, function(err, result) {
+	if (err) { throw(err); return; }
+	res.set('Content-Type', 'application/json')
+	    .send(result);
+    })
 })
 
-function map(req, res, query) {
+function map(query, callback) {
     toArray(
 	client.scan({ pattern: "sysreq:*" }),
 	function(err, arr) {
-	    if (err) {
-		res.status(404)
-		    .set('Content-Type', 'application/json')
-		    .send({ error: "not found" });
-
-	    } else {
-		arr = arr.map(function(x) { return x.replace("sysreq:", "") });
-		async.concat(arr, try_map, function(err, results) {
-		    if (err) { throw(err); return; }
-		    res.set('Content-Type', 'application/json')
-			.send(results);
-		})
-	    }
+	    if (err) { callback(err);  return; }
+	    arr = arr.map(function(x) { return x.replace("sysreq:", "") });
+	    async.concat(
+		arr,
+		function(x, cb) { try_map(x, query, cb) },
+		callback
+	    )
 	}
     );
+}
 
-    function try_map(name, callback) {
-	var item = "sysreq:" + name;
-	client.get(item, function(err, entry) {
-	    if (err) { callback(err); return; }
-	    entry = JSON.parse(entry);
-	    var reqs = entry[name].sysreqs;
-	    if (reqs.constructor !== Array) { reqs = [ reqs ]; }
-	    for (var p = 0; p < reqs.length; p++) {
-		req = reqs[p];
-		var gotit = false;
+function try_map(name, query, callback) {
+    var item = "sysreq:" + name;
+    client.get(item, function(err, entry) {
+	if (err) { callback(err); return; }
+	entry = JSON.parse(entry);
+	var reqs = entry[name].sysreqs;
+	if (reqs.constructor !== Array) { reqs = [ reqs ]; }
+	for (var p = 0; p < reqs.length; p++) {
+	    req = reqs[p];
+	    var gotit = false;
 
-		// Regular expression or not
-		if (req.length >= 2 && req[0] == '/') {
-		    var restr = req.replace(
+	    // Regular expression or not
+	    if (req.length >= 2 && req[0] == '/') {
+		var restr = req.replace(
 			/^\/(.*)\/([a-zA-Z]*)$/,
-			function(match, $1, $2) { return $1 }
-		    );
-		    var re = new RegExp(restr, "i");
-		    gotit = re.test(query);
+		    function(match, $1, $2) { return $1 }
+		);
+		var re = new RegExp(restr, "i");
+		gotit = re.test(query);
 
-		} else {
-		    gotit = query.indexOf(req) > -1;
-		}
-
-		if (gotit) { console.log([entry]); callback(null, [ entry ]); return; }
+	    } else {
+		gotit = query.indexOf(req) > -1;
 	    }
 
-	    callback(null, []);
-	})
-    }
+	    if (gotit) { callback(null, [ entry ]); return; }
+	}
+
+	callback(null, []);
+    })
 }
 
 // ------------------------------------------------------------------
@@ -144,17 +144,38 @@ router.get(re2, function(req, res) {
     var pkg = req.params[0];
     got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
 	if (err) { throw(err); return; }
-	map(req, res, data)
+	map(data, function(err, result) {
+	    if (err) { throw(err); return; }
+	    res.set('Content-Type', 'application/json')
+		.send(result);
+	})
     })
 })
 
 // ------------------------------------------------------------------
 // Get OS dependent requirements for a CRAN package
 
-var re3 = new RegExp('/pkg/([-\\w\\.]+)/([\\w]+)$');
+var re3 = new RegExp('/pkg/([-\\w\\.]+)/(.*)$');
 
 router.get(re3, function(req, res) {
-    // TODO
+    var pkg = req.params[0];
+    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
+	if (err) { throw(err); return; }
+	get_platform(req.params[1], function(err, platform) {
+	    if (err || ! platform) { throw("Unknown platform"); return; }
+	    map(data, function(err, result) {
+		if (err) { throw(err); return; }
+		async.mapSeries(
+		    result,
+		    function(x, cb) { return match_platform(x, platform, cb) },
+		    function(err, pkgs) {
+			res.set('Content-Type', 'application/json')
+			    .send(pkgs);
+		    }
+		)
+	    })
+	})
+    })
 })
 
 module.exports = router;
