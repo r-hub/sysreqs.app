@@ -10,13 +10,14 @@ var redis = require('redis');
 require("redis-scanstreams")(redis);
 var client = redis.createClient(urls.redis_port, urls.redis_host);
 
+// ------------------------------------------------------------------
 // A simple summary of the API
 
 router.get("/", function(req, res) {
     res.render('index');
 })
 
-
+// ------------------------------------------------------------------
 // Download all entries from GitHub, and put them into the
 // Redis DB
 
@@ -29,6 +30,7 @@ router.get("/populate", function(req, res) {
 		'result': 'OK' });
 })
 
+// ------------------------------------------------------------------
 // Get a canonical mapping
 
 router.get(new RegExp('/get/([-\\w\\._]+)$'), function(req, res) {
@@ -47,6 +49,7 @@ router.get(new RegExp('/get/([-\\w\\._]+)$'), function(req, res) {
     })
 })
 
+// ------------------------------------------------------------------
 // List canonical mappings
 
 router.get('/list', function(req, res) {
@@ -72,6 +75,7 @@ router.get('/list', function(req, res) {
     )
 })
 
+// ------------------------------------------------------------------
 // Map a SystemRequirements field to canonical system requirement names
 // We need to load all records from the Redis DB, and search them
 
@@ -131,6 +135,7 @@ router.get(re1, function(req, res) {
     }
 })
 
+// ------------------------------------------------------------------
 // Get canonical system requirement names for a CRAN package
 // The latest version is used by default. Version numbers can be
 // given after a dash.
@@ -140,15 +145,16 @@ router.get(re1, function(req, res) {
 var re2 = new RegExp('/pkg/([-\\w\\.]+)$');
 
 router.get(re2, function(req, res) {
-
+    // TODO
 })
 
+// ------------------------------------------------------------------
 // Get OS dependent requirements for a CRAN package
 
 var re3 = new RegExp('/pkg/([-\\w\\.]+)/([\\w]+)$');
 
 router.get(re3, function(req, res) {
-
+    // TODO
 })
 
 module.exports = router;
