@@ -11,13 +11,6 @@ require("redis-scanstreams")(redis);
 var client = redis.createClient(urls.redis_port, urls.redis_host);
 
 // ------------------------------------------------------------------
-// A simple summary of the API
-
-router.get("/", function(req, res) {
-    res.render('index');
-})
-
-// ------------------------------------------------------------------
 // Download all entries from GitHub, and put them into the
 // Redis DB
 

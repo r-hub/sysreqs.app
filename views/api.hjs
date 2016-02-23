@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/stylesheets/man.css">
+</head>
+<body id="manpage">
+  {{> ghcorner }}
+  <div class='mp' id='man'>
+    {{{ html }}}
+  </div>
+</body>
+</html>
