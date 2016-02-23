@@ -4,6 +4,7 @@ var populate = require('../lib/populate');
 var tail = require('terminus').tail;
 var toArray = require('stream-to-array')
 var async = require('async');
+var got = require('got');
 
 var urls = require('../lib/urls');
 var redis = require('redis');
@@ -73,9 +74,12 @@ router.get('/list', function(req, res) {
 // We need to load all records from the Redis DB, and search them
 
 var re1 = new RegExp('/map/(.*)$');
-
 router.get(re1, function(req, res) {
-    var query = req.params[0];
+    query = req.params[0];
+    map(req, res, query);
+})
+
+function map(req, res, query) {
     toArray(
 	client.scan({ pattern: "sysreq:*" }),
 	function(err, arr) {
@@ -86,7 +90,8 @@ router.get(re1, function(req, res) {
 
 	    } else {
 		arr = arr.map(function(x) { return x.replace("sysreq:", "") });
-		async.filter(arr, try_map, function(results) {
+		async.concat(arr, try_map, function(err, results) {
+		    if (err) { throw(err); return; }
 		    res.set('Content-Type', 'application/json')
 			.send(results);
 		})
@@ -103,7 +108,6 @@ router.get(re1, function(req, res) {
 	    if (reqs.constructor !== Array) { reqs = [ reqs ]; }
 	    for (var p = 0; p < reqs.length; p++) {
 		req = reqs[p];
-		console.log(req);
 		var gotit = false;
 
 		// Regular expression or not
@@ -119,14 +123,13 @@ router.get(re1, function(req, res) {
 		    gotit = query.indexOf(req) > -1;
 		}
 
-		console.log(gotit);
-		if (gotit) { callback(true); return; }
+		if (gotit) { console.log([entry]); callback(null, [ entry ]); return; }
 	    }
 
-	    callback(false);
+	    callback(null, []);
 	})
     }
-})
+}
 
 // ------------------------------------------------------------------
 // Get canonical system requirement names for a CRAN package
@@ -138,7 +141,11 @@ router.get(re1, function(req, res) {
 var re2 = new RegExp('/pkg/([-\\w\\.]+)$');
 
 router.get(re2, function(req, res) {
-    // TODO
+    var pkg = req.params[0];
+    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
+	if (err) { throw(err); return; }
+	map(req, res, data)
+    })
 })
 
 // ------------------------------------------------------------------
