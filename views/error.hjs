@@ -1,3 +1,12 @@
-<h1>{{ message }}</h1>
-<h2>{{ error.status }}</h2>
-<pre>{{ error.stack }}</pre>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>R-hub sysreqs</title>
+</head>
+<body id="manpage">
+  {{> ghcorner }}
+  <h1>{{ message }}</h1>
+  <h2>{{ error.status }}</h2>
+  <pre>{{ error.stack }}</pre>
+</body>
+</html>

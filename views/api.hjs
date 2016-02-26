@@ -2,6 +2,7 @@
 <html>
 <head>
   <link rel="stylesheet" href="/stylesheets/man.css">
+  <title>R-hub sysreqs</title>
 </head>
 <body id="manpage">
   {{> ghcorner }}
