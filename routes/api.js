@@ -11,7 +11,7 @@ var got = require('got');
 var urls = require('../lib/urls');
 var redis = require('redis');
 require("redis-scanstreams")(redis);
-var client = redis.createClient(urls.redis_port, urls.redis_host);
+var client = redis.createClient(urls.redis_url);
 
 // ------------------------------------------------------------------
 // Download all entries from GitHub, and put them into the
