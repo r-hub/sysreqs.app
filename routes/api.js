@@ -144,7 +144,7 @@ router.get(re4, function(req, res) {
     map(query, function(err, result) {
 	if (err) { throw(err); return; }
 	get_platform(req.params[0], function(err, platform) {
-	    if (err || ! platform) { throw("Unknown platform"); return; }
+	    if (err || ! platform) { res.end("Unknown platform"); return; }
 	    async.mapSeries(
 		result,
 		function(x, cb) { return match_platform(x, platform, cb) },
