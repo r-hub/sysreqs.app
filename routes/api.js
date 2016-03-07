@@ -131,6 +131,32 @@ function try_map(name, query, callback) {
     })
 }
 
+
+// ------------------------------------------------------------------
+// Like /map, but for a specific platform
+
+var re4 = new RegExp('/map-platform/(.*)/(.*)$');
+
+router.get(re4, function(req, res) {
+
+    var query = req.params[1];
+
+    map(query, function(err, result) {
+	if (err) { throw(err); return; }
+	get_platform(req.params[0], function(err, platform) {
+	    if (err || ! platform) { throw("Unknown platform"); return; }
+	    async.mapSeries(
+		result,
+		function(x, cb) { return match_platform(x, platform, cb) },
+		function(err, pkgs) {
+		    res.set('Content-Type', 'application/json')
+			.send(pkgs);
+		}
+	    )
+	})
+    })
+})
+
 // ------------------------------------------------------------------
 // Get canonical system requirement names for a CRAN package
 // The latest version is used by default. Version numbers can be
