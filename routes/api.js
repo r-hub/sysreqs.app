@@ -162,19 +162,37 @@ router.get(re4, function(req, res) {
 // The latest version is used by default. Version numbers can be
 // given after a dash.
 //
+// First check if the system requirement is in the overrides.
+// If yes, then just use that. Otherwise use crandb to get the
+// SystemRequirements field.
+//
 // The mapping are cached in the DB. (TODO)
 
 var re2 = new RegExp('/pkg/([-\\w\\.]+)$');
 
 router.get(re2, function(req, res) {
     var pkg = req.params[0];
-    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
-	if (err) { throw(err); return; }
-	map(data, function(err, result) {
-	    if (err) { throw(err); return; }
-	    res.set('Content-Type', 'application/json')
-		.send(result);
-	})
+    client.get('cran:' + pkg, function(err, entry) {
+
+	if (err || entry === null) {
+	    // Error, we get it from crandb
+	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
+		if (err) { throw(err); return; }
+		map(data, function(err, result) {
+		    if (err) { throw(err); return; }
+		    res.set('Content-Type', 'application/json')
+			.send(result);
+		})
+	    })
+	} else {
+	    var sysreq = JSON.parse(entry)[pkg];
+	    // No error, so we have the canonical names
+	    map(sysreq, function(err, result) {
+		if (err) { throw(err); return; }
+		res.set('Content-Type', 'application/json')
+		    .send(result);
+	    })
+	}
     })
 })
 
