@@ -203,22 +203,44 @@ var re3 = new RegExp('/pkg/([-\\w\\.]+)/(.*)$');
 
 router.get(re3, function(req, res) {
     var pkg = req.params[0];
-    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
-	if (err) { throw(err); return; }
-	get_platform(req.params[1], function(err, platform) {
-	    if (err || ! platform) { throw("Unknown platform"); return; }
-	    map(data, function(err, result) {
+    client.get('cran:' + pkg, function(err, entry) {
+
+	if (err || entry === null) {
+	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
 		if (err) { throw(err); return; }
-		async.mapSeries(
-		    result,
-		    function(x, cb) { return match_platform(x, platform, cb) },
-		    function(err, pkgs) {
-			res.set('Content-Type', 'application/json')
-			    .send(pkgs);
-		    }
-		)
+		get_platform(req.params[1], function(err, platform) {
+		    if (err || ! platform) { throw("Unknown platform"); return; }
+		    map(data, function(err, result) {
+			if (err) { throw(err); return; }
+			async.mapSeries(
+			    result,
+			    function(x, cb) { return match_platform(x, platform, cb) },
+			    function(err, pkgs) {
+				res.set('Content-Type', 'application/json')
+				    .send(pkgs);
+			    }
+			)
+		    })
+		})
 	    })
-	})
+
+	} else {
+	    var sysreq = JSON.parse(entry)[pkg];
+	    get_platform(req.params[1], function(err, platform) {
+		if (err || ! platform) { throw("Unknown platform"); return; }
+		map(sysreq, function(err, result) {
+		    if (err) { throw(err); return; }
+		    async.mapSeries(
+			result,
+			function(x, cb) { return match_platform(x, platform, cb) },
+			function(err, pkgs) {
+			    res.set('Content-Type', 'application/json')
+				.send(pkgs);
+			}
+		    )
+		})
+	    })
+	}
     })
 })
 
