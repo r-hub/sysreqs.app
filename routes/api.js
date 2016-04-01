@@ -172,7 +172,8 @@ var re2 = new RegExp('/pkg/([-\\w\\.]+)$');
 
 router.get(re2, function(req, res) {
     var pkg = req.params[0];
-    client.get('cran:' + pkg, function(err, entry) {
+    var pkgnover = pkg.split('-')[0];
+    client.get('cran:' + pkgnover, function(err, entry) {
 
 	if (err || entry === null) {
 	    // Error, we get it from crandb
@@ -185,7 +186,7 @@ router.get(re2, function(req, res) {
 		})
 	    })
 	} else {
-	    var sysreq = JSON.parse(entry)[pkg];
+	    var sysreq = JSON.parse(entry)[pkgnover];
 	    // No error, so we have the canonical names
 	    map(sysreq, function(err, result) {
 		if (err) { throw(err); return; }
@@ -203,7 +204,8 @@ var re3 = new RegExp('/pkg/([-\\w\\.]+)/(.*)$');
 
 router.get(re3, function(req, res) {
     var pkg = req.params[0];
-    client.get('cran:' + pkg, function(err, entry) {
+    var pkgnover = pkg.split('-')[0];
+    client.get('cran:' + pkgnover, function(err, entry) {
 
 	if (err || entry === null) {
 	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
@@ -225,7 +227,7 @@ router.get(re3, function(req, res) {
 	    })
 
 	} else {
-	    var sysreq = JSON.parse(entry)[pkg];
+	    var sysreq = JSON.parse(entry)[pkgnover];
 	    get_platform(req.params[1], function(err, platform) {
 		if (err || ! platform) { throw("Unknown platform"); return; }
 		map(sysreq, function(err, result) {
