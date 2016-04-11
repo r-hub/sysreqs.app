@@ -7,6 +7,7 @@ var tail = require('terminus').tail;
 var toArray = require('stream-to-array')
 var async = require('async');
 var got = require('got');
+var isArray = require('is-array');
 
 var urls = require('../lib/urls');
 var redis = require('redis');
