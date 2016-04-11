@@ -187,13 +187,21 @@ router.get(re2, function(req, res) {
 		})
 	    })
 	} else {
+	    // No error, so we have the canonical names, no need to map
 	    var sysreq = JSON.parse(entry)[pkgnover];
-	    // No error, so we have the canonical names
-	    map(sysreq, function(err, result) {
-		if (err) { throw(err); return; }
-		res.set('Content-Type', 'application/json')
-		    .send(result);
-	    })
+	    if (!isArray(sysreq)) { sysreq = [ sysreq ]; }
+	    async.map(
+		sysreq,
+		function(item, callback) {
+		    client.get('sysreq:' + item, callback);
+		},
+		function(err, results) {
+		    if (err) { return console.log(err); }
+		    results = results.map(JSON.parse);
+		    res.set('Content-Type', 'application/json')
+			.send(results);
+		}
+	    );
 	}
     })
 })
@@ -229,19 +237,27 @@ router.get(re3, function(req, res) {
 
 	} else {
 	    var sysreq = JSON.parse(entry)[pkgnover];
+	    if (!isArray(sysreq)) { sysreq = [ sysreq ]; }
 	    get_platform(req.params[1], function(err, platform) {
 		if (err || ! platform) { throw("Unknown platform"); return; }
-		map(sysreq, function(err, result) {
-		    if (err) { throw(err); return; }
-		    async.mapSeries(
-			result,
-			function(x, cb) { return match_platform(x, platform, cb) },
-			function(err, pkgs) {
-			    res.set('Content-Type', 'application/json')
-				.send(pkgs);
-			}
-		    )
-		})
+		async.map(
+		    sysreq,
+		    function(item, callback) {
+			client.get('sysreq:' + item, callback);
+		    },
+		    function(err, results) {
+			if (err) { return console.log(err); }
+			results = results.map(JSON.parse);
+			async.mapSeries(
+			    results,
+			    function(x, cb) { return match_platform(x, platform, cb); },
+			    function(err, pkgs) {
+				res.set('Content-Type', 'application/json')
+				    .send(pkgs);
+			    }
+			)
+		    }
+		)
 	    })
 	}
     })
