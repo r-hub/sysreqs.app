@@ -263,4 +263,50 @@ router.get(re3, function(req, res) {
     })
 })
 
+
+// ------------------------------------------------------------------
+// Get a platform
+
+router.get(new RegExp('^/platform/get/([-\\w\\._]+)$'), function(req, res) {
+    client.get('platform:' + req.params[0], function(err, entry) {
+	if (err || entry === null) {
+	    res.status(404)
+		.render('error', {
+		    message: 'platform not found',
+		    error: { }
+		});
+
+	} else {
+	    res.set('Content-Type', 'application/json')
+		.send(entry);
+	}
+    });
+});
+
+// ------------------------------------------------------------------
+// List platforms
+
+router.get('/platform/list', function(req, res) {
+    var limit = req.query.limit || 10;
+    var offset = req.query.offset || 0;
+    toArray(
+	client.scan({ pattern: "platform:*" }),
+	function(err, arr) {
+	    if (err) {
+		res.status(500)
+		    .render('error', {
+			message: 'cannot connect to database',
+			error: { }
+		    });
+
+	    } else {
+		arr = arr.map(function(x) { return x.replace("platform:", "") });
+		arr.sort();
+		res.set('Content-Type', 'application/json')
+		    .send(arr);
+	    }
+	}
+    )
+})
+
 module.exports = router;
