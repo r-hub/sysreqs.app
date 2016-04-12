@@ -30,7 +30,7 @@ router.get("/populate", function(req, res) {
 // ------------------------------------------------------------------
 // Get a canonical mapping
 
-router.get(new RegExp('/get/([-\\w\\._]+)$'), function(req, res) {
+router.get(new RegExp('^/get/([-\\w\\._]+)$'), function(req, res) {
     client.get('sysreq:' + req.params[0], function(err, entry) {
 	if (err || entry === null) {
 	    res.status(404)
@@ -76,7 +76,7 @@ router.get('/list', function(req, res) {
 // Map a SystemRequirements field to canonical system requirement names
 // We need to load all records from the Redis DB, and search them
 
-var re1 = new RegExp('/map/(.*)$');
+var re1 = new RegExp('^/map/(.*)$');
 router.get(re1, function(req, res) {
     query = req.params[0];
     map(query, function(err, result) {
@@ -136,7 +136,7 @@ function try_map(name, query, callback) {
 // ------------------------------------------------------------------
 // Like /map, but for a specific platform
 
-var re4 = new RegExp('/map-platform/(.*)/(.*)$');
+var re4 = new RegExp('^/map-platform/(.*)/(.*)$');
 
 router.get(re4, function(req, res) {
 
@@ -169,7 +169,7 @@ router.get(re4, function(req, res) {
 //
 // The mapping are cached in the DB. (TODO)
 
-var re2 = new RegExp('/pkg/([-\\w\\.]+)$');
+var re2 = new RegExp('^/pkg/([-\\w\\.]+)$');
 
 router.get(re2, function(req, res) {
     var pkg = req.params[0];
@@ -209,7 +209,7 @@ router.get(re2, function(req, res) {
 // ------------------------------------------------------------------
 // Get OS dependent requirements for a CRAN package
 
-var re3 = new RegExp('/pkg/([-\\w\\.]+)/(.*)$');
+var re3 = new RegExp('^/pkg/([-\\w\\.]+)/(.*)$');
 
 router.get(re3, function(req, res) {
     var pkg = req.params[0];
