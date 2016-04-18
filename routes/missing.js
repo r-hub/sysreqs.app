@@ -22,8 +22,11 @@ router.get('/missing', function(req, res) {
       function(item, callback) {
         if (item.indexOf('-') > -1) { return callback(false); }
         map(client, sys[item], function(err, canon) {
-          if (err) { return callback(false); }
-          callback(true);
+          if (err) {
+              res.render('error', { message: 'database error', error: { }});
+              return;
+          }
+          callback(canon.length == 0);
         })
       },
       function(results) {
