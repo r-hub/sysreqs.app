@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var populate = require('../lib/populate');
+var map = require('../lib/map');
 var get_platform = require('../lib/get-platform');
 var match_platform = require('../lib/match-platform');
 var tail = require('terminus').tail;
@@ -79,59 +80,12 @@ router.get('/list', function(req, res) {
 var re1 = new RegExp('^/map/(.*)$');
 router.get(re1, function(req, res) {
     query = req.params[0];
-    map(query, function(err, result) {
+    map(client, query, function(err, result) {
 	if (err) { throw(err); return; }
 	res.set('Content-Type', 'application/json')
 	    .send(result);
     })
 })
-
-function map(query, callback) {
-    toArray(
-	client.scan({ pattern: "sysreq:*" }),
-	function(err, arr) {
-	    if (err) { callback(err);  return; }
-	    arr = arr.map(function(x) { return x.replace("sysreq:", "") });
-	    async.concat(
-		arr,
-		function(x, cb) { try_map(x, query, cb) },
-		callback
-	    )
-	}
-    );
-}
-
-function try_map(name, query, callback) {
-    var item = "sysreq:" + name;
-    client.get(item, function(err, entry) {
-	if (err) { callback(err); return; }
-	entry = JSON.parse(entry);
-	var reqs = entry[name].sysreqs;
-	if (reqs.constructor !== Array) { reqs = [ reqs ]; }
-	for (var p = 0; p < reqs.length; p++) {
-	    req = reqs[p];
-	    var gotit = false;
-
-	    // Regular expression or not
-	    if (req.length >= 2 && req[0] == '/') {
-		var restr = req.replace(
-			/^\/(.*)\/([a-zA-Z]*)$/,
-		    function(match, $1, $2) { return $1 }
-		);
-		var re = new RegExp(restr, "i");
-		gotit = re.test(query);
-
-	    } else {
-		gotit = query.indexOf(req) > -1;
-	    }
-
-	    if (gotit) { callback(null, [ entry ]); return; }
-	}
-
-	callback(null, []);
-    })
-}
-
 
 // ------------------------------------------------------------------
 // Like /map, but for a specific platform
@@ -142,7 +96,7 @@ router.get(re4, function(req, res) {
 
     var query = req.params[1];
 
-    map(query, function(err, result) {
+    map(client, query, function(err, result) {
 	if (err) { throw(err); return; }
 	get_platform(req.params[0], function(err, platform) {
 	    if (err || ! platform) { res.end("Unknown platform"); return; }
@@ -180,7 +134,7 @@ router.get(re2, function(req, res) {
 	    // Error, we get it from crandb
 	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
 		if (err) { throw(err); return; }
-		map(data, function(err, result) {
+		map(client, data, function(err, result) {
 		    if (err) { throw(err); return; }
 		    res.set('Content-Type', 'application/json')
 			.send(result);
@@ -221,7 +175,7 @@ router.get(re3, function(req, res) {
 		if (err) { throw(err); return; }
 		get_platform(req.params[1], function(err, platform) {
 		    if (err || ! platform) { throw("Unknown platform"); return; }
-		    map(data, function(err, result) {
+		    map(client, data, function(err, result) {
 			if (err) { throw(err); return; }
 			async.mapSeries(
 			    result,
