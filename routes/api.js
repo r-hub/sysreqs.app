@@ -81,7 +81,14 @@ var re1 = new RegExp('^/map/(.*)$');
 router.get(re1, function(req, res) {
     query = req.params[0];
     map(client, query, function(err, result) {
-	if (err) { throw(err); return; }
+	if (err) {
+	    res.status(404)
+		.render('error', {
+		    message: 'sysreq not found',
+		    error: { }
+		});
+	    return;
+	}
 	res.set('Content-Type', 'application/json')
 	    .send(result);
     })
@@ -97,7 +104,14 @@ router.get(re4, function(req, res) {
     var query = req.params[1];
 
     map(client, query, function(err, result) {
-	if (err) { throw(err); return; }
+	if (err) {
+	    res.status(404)
+		.render('error', {
+		    message: 'sysreq not found',
+		    error: { }
+		});
+	    return;
+	}
 	get_platform(req.params[0], function(err, platform) {
 	    if (err || ! platform) { res.end("Unknown platform"); return; }
 	    async.mapSeries(
@@ -133,9 +147,23 @@ router.get(re2, function(req, res) {
 	if (err || entry === null) {
 	    // Error, we get it from crandb
 	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
-		if (err) { throw(err); return; }
+		if (err) {
+		    res.status(404)
+			.render('error', {
+			    message: 'sysreq not found',
+			    error: { }
+			});
+		    return;
+		}
 		map(client, data, function(err, result) {
-		    if (err) { throw(err); return; }
+		    if (err) {
+			res.status(404)
+			    .render('error', {
+				message: 'sysreq not found',
+				error: { }
+			    });
+			return;
+		    }
 		    res.set('Content-Type', 'application/json')
 			.send(result);
 		})
@@ -172,11 +200,32 @@ router.get(re3, function(req, res) {
 
 	if (err || entry === null) {
 	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
-		if (err) { throw(err); return; }
+		if (err) {
+		    res.status(404)
+			.render('error', {
+			    message: 'sysreq not found',
+			    error: { }
+			});
+		    return;
+		}
 		get_platform(req.params[1], function(err, platform) {
-		    if (err || ! platform) { throw("Unknown platform"); return; }
+		    if (err || ! platform) {
+			res.status(404)
+			    .render('error', {
+				message: 'unknown platform',
+				error: { }
+			    });
+			return;
+		    }
 		    map(client, data, function(err, result) {
-			if (err) { throw(err); return; }
+			if (err) {
+			    res.status(404)
+				.render('error', {
+				    message: 'sysreq not found',
+				    error: { }
+				});
+			    return;
+			}
 			async.mapSeries(
 			    result,
 			    function(x, cb) { return match_platform(x, platform, cb) },
@@ -193,7 +242,14 @@ router.get(re3, function(req, res) {
 	    var sysreq = JSON.parse(entry)[pkgnover];
 	    if (!isArray(sysreq)) { sysreq = [ sysreq ]; }
 	    get_platform(req.params[1], function(err, platform) {
-		if (err || ! platform) { throw("Unknown platform"); return; }
+		if (err || ! platform) {
+		    res.status(404)
+			.render('error', {
+			    message: 'unknown platform',
+			    error: { }
+			});
+		    return;
+		}
 		async.map(
 		    sysreq,
 		    function(item, callback) {
