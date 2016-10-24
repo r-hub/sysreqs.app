@@ -319,4 +319,23 @@ router.get('/platform/list', function(req, res) {
     )
 })
 
+// ------------------------------------------------------------------
+// Get a script
+
+router.get(new RegExp('/script/([-\\w\\._]+)$'), function(req, res) {
+    client.get('script:' + req.params[0], function(err, entry) {
+	if (err || entry === null) {
+	    res.status(404)
+		.render('error', {
+		    message: 'script not found',
+		    error: { }
+		});
+
+	} else {
+	    res.set('Content-Type', 'application/text')
+		.send(entry);
+	}
+    });
+});
+
 module.exports = router;
