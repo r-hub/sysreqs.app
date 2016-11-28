@@ -140,24 +140,35 @@ router.get(re4, function(req, res) {
 //
 // The mapping are cached in the DB. (TODO)
 
-var re2 = new RegExp('^/pkg/([-\\w\\.]+)$');
+var re2 = new RegExp('^/pkg/([-\\w\\.,]+)$');
 
 router.get(re2, function(req, res) {
-    var pkg = req.params[0];
-
-    cran_sysreqs(pkg, function(err, result) {
-	if (err) {
-	    res.status(404)
-		.render('error', {
-		    message: 'sysreq not found',
-		    error: err
-		});
-	}
-
-	res.set('Content-Type', 'application/json')
-	    .send(result);
-    });
-})
+    var pkgs = req.params[0].split(',');
+    async.map(
+	pkgs,
+	function(item, callback) {
+	    cran_sysreqs(item, function(err, res) {
+		if (err) {
+		    callback(null, []);
+		} else {
+		    callback(null, res);
+		}
+	    })
+	},
+	function(err, results) {
+	    if (err) {
+		res.status(404)
+		    .render('error', {
+			message: 'sysreq not found',
+			error: err
+		    });
+	    }
+	    var merged = [].concat.apply([], results);
+	    res.set('Content-Type', 'application/json')
+		.send(merged);
+	})
+    ;
+});
 
 // ------------------------------------------------------------------
 // Get OS dependent requirements for a CRAN package
@@ -166,82 +177,20 @@ var re3 = new RegExp('^/pkg/([-\\w\\.]+)/(.*)$');
 
 router.get(re3, function(req, res) {
     var pkg = req.params[0];
-    var pkgnover = pkg.split('-')[0];
-    client.get('cran:' + pkgnover, function(err, entry) {
+    var platform = req.params[1];
 
-	if (err || entry === null) {
-	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
-		if (err) {
-		    res.status(404)
-			.render('error', {
-			    message: 'sysreq not found',
-			    error: { }
-			});
-		    return;
-		}
-		get_platform(req.params[1], function(err, platform) {
-		    if (err || ! platform) {
-			res.status(404)
-			    .render('error', {
-				message: 'unknown platform',
-				error: { }
-			    });
-			return;
-		    }
-		    map(client, data, function(err, result) {
-			if (err) {
-			    res.status(404)
-				.render('error', {
-				    message: 'sysreq not found',
-				    error: { }
-				});
-			    return;
-			}
-			async.mapSeries(
-			    result,
-			    function(x, cb) { return match_platform(x, platform, cb) },
-			    function(err, pkgs) {
-				res.set('Content-Type', 'application/json')
-				    .send(pkgs);
-			    }
-			)
-		    })
-		})
-	    })
-
-	} else {
-	    var sysreq = JSON.parse(entry)[pkgnover];
-	    if (!isArray(sysreq)) { sysreq = [ sysreq ]; }
-	    get_platform(req.params[1], function(err, platform) {
-		if (err || ! platform) {
-		    res.status(404)
-			.render('error', {
-			    message: 'unknown platform',
-			    error: { }
-			});
-		    return;
-		}
-		async.map(
-		    sysreq,
-		    function(item, callback) {
-			client.get('sysreq:' + item, callback);
-		    },
-		    function(err, results) {
-			if (err) { return console.log(err); }
-			results = results.map(JSON.parse);
-			async.mapSeries(
-			    results,
-			    function(x, cb) { return match_platform(x, platform, cb); },
-			    function(err, pkgs) {
-				res.set('Content-Type', 'application/json')
-				    .send(pkgs);
-			    }
-			)
-		    }
-		)
-	    })
+    cran_sysreqs_platform(pkg, platform, function(err, result) {
+	if (err) {
+	    return res.status(404)
+		.render('error', {
+		    message: 'sysreq not found',
+		    error: { }
+		});
 	}
-    })
+
+	res.set('Content-Type', 'application/json')
+	    .send(result);
+    });
 })
 
 
@@ -253,7 +202,7 @@ router.get(new RegExp('^/platform/get/([-\\w\\._]+)$'), function(req, res) {
 	if (err || entry === null) {
 	    res.status(404)
 		.render('error', {
-		    message: 'platform not found',
+		    message: err,
 		    error: { }
 		});
 
