@@ -157,7 +157,7 @@ router.get(re2, function(req, res) {
 	},
 	function(err, results) {
 	    if (err) {
-		res.status(404)
+		return res.status(404)
 		    .render('error', {
 			message: 'sysreq not found',
 			error: err
