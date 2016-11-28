@@ -15,6 +15,9 @@ var redis = require('redis');
 require("redis-scanstreams")(redis);
 var client = redis.createClient(urls.redis_url);
 
+var cran_sysreqs = require('../lib/cran-sysreqs');
+var cran_sysreqs_platform = require('../lib/cran-sysreqs-platform');
+
 // ------------------------------------------------------------------
 // Download all entries from GitHub, and put them into the
 // Redis DB
@@ -141,51 +144,19 @@ var re2 = new RegExp('^/pkg/([-\\w\\.]+)$');
 
 router.get(re2, function(req, res) {
     var pkg = req.params[0];
-    var pkgnover = pkg.split('-')[0];
-    client.get('cran:' + pkgnover, function(err, entry) {
 
-	if (err || entry === null) {
-	    // Error, we get it from crandb
-	    got(urls.crandb + '/-/sysreqs?key="' + pkg + '"', function(err, data) {
-		if (err) {
-		    res.status(404)
-			.render('error', {
-			    message: 'sysreq not found',
-			    error: { }
-			});
-		    return;
-		}
-		map(client, data, function(err, result) {
-		    if (err) {
-			res.status(404)
-			    .render('error', {
-				message: 'sysreq not found',
-				error: { }
-			    });
-			return;
-		    }
-		    res.set('Content-Type', 'application/json')
-			.send(result);
-		})
-	    })
-	} else {
-	    // No error, so we have the canonical names, no need to map
-	    var sysreq = JSON.parse(entry)[pkgnover];
-	    if (!isArray(sysreq)) { sysreq = [ sysreq ]; }
-	    async.map(
-		sysreq,
-		function(item, callback) {
-		    client.get('sysreq:' + item, callback);
-		},
-		function(err, results) {
-		    if (err) { return console.log(err); }
-		    results = results.map(JSON.parse);
-		    res.set('Content-Type', 'application/json')
-			.send(results);
-		}
-	    );
+    cran_sysreqs(pkg, function(err, result) {
+	if (err) {
+	    res.status(404)
+		.render('error', {
+		    message: 'sysreq not found',
+		    error: err
+		});
 	}
-    })
+
+	res.set('Content-Type', 'application/json')
+	    .send(result);
+    });
 })
 
 // ------------------------------------------------------------------
