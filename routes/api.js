@@ -173,24 +173,35 @@ router.get(re2, function(req, res) {
 // ------------------------------------------------------------------
 // Get OS dependent requirements for a CRAN package
 
-var re3 = new RegExp('^/pkg/([-\\w\\.]+)/(.*)$');
+var re3 = new RegExp('^/pkg/([-\\w\\.,]+)/(.*)$');
 
 router.get(re3, function(req, res) {
-    var pkg = req.params[0];
+    var pkgs = req.params[0].split(',');
     var platform = req.params[1];
-
-    cran_sysreqs_platform(pkg, platform, function(err, result) {
-	if (err) {
-	    return res.status(404)
-		.render('error', {
-		    message: 'sysreq not found',
-		    error: { }
-		});
+    async.map(
+	pkgs,
+	function(item, callback) {
+	    cran_sysreqs_platform(item, platform, function(err, res) {
+		if (err) {
+		    callback(null, []);
+		} else {
+		    callback(null, res);
+		}
+	    });
+	},
+	function(err, results) {
+	    if (err) {
+		return res.status(404)
+		    .render('error', {
+			message: 'platform not found',
+			error: { }
+		    });
+	    }
+	    var merged = [].concat.apply([], results);
+	    res.set('Content-Type', 'application/json')
+		.send(merged);
 	}
-
-	res.set('Content-Type', 'application/json')
-	    .send(result);
-    });
+    );
 })
 
 
