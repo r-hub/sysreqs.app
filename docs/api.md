@@ -4,11 +4,11 @@
 ## SYNOPSIS
 
 `GET /`  
-`GET /get`/<mapping>  
+`GET /get`/&lt;mapping>  
 `GET /list`  
-`GET /map`/<string>  
+`GET /map`/&lt;string>  
 `GET /populate`  
-`GET /pkg`/<package>[`/`<os>]
+`GET /pkg`/&lt;package>[`/`&lt;os>]
 
 ## DESCRIPTION
 
@@ -34,26 +34,26 @@ encoded.
 * `GET /`  
    This page.
 
-* `GET /get` / <mapping>  
+* `GET /get` / &lt;mapping>  
   Retrieve a complete mapping entry by its name.
 
 * `GET /list`  
   List all mapping entries.
 
-* `GET /map` / <string>  
+* `GET /map` / &lt;string>  
   Map a `SystemRequirements` field to canonical entries. It returns a list
-  of full entries. <string> may contains arbitrary characters, but potentially
+  of full entries. &lt;string> may contains arbitrary characters, but potentially
   it has to be URL encoded.
 
 * `GET /populate`  
   Refresh the database from the `r-hub/sysreqs` repository
   at GitHub.
 
-* `GET /pkg` / <package>  
+* `GET /pkg` / &lt;package>  
   Map a single R packge, potentially on a single operating system.
-  <package> must be a single CRAN package.
+  &lt;package> must be a single CRAN package.
 
-* `GET /pkg` / <package>  / <os>   
+* `GET /pkg` / &lt;package>  / &lt;os>   
   Get the operating system specific packages that are needed for a CRAN package.
 
 ## EXAMPLES
