@@ -19,6 +19,47 @@ var cran_sysreqs = require('../lib/cran-sysreqs');
 var cran_sysreqs_platform = require('../lib/cran-sysreqs-platform');
 
 // ------------------------------------------------------------------
+// Summary
+
+router.get("/", function(req, res) {
+    async.parallel({
+        sysreqs: function(callback) {
+            client.eval(
+                "return #redis.pcall('keys', 'sysreq:*')", 0, callback)
+        },
+        platforms: function(callback) {
+            client.eval(
+                "return #redis.pcall('keys', 'platform:*')", 0, callback)
+        },
+        scripts: function(callback) {
+            client.eval(
+                "return #redis.pcall('keys', 'script:*')", 0, callback)
+        },
+        overrides: function(callback) {
+            client.eval(
+                "return #redis.pcall('keys', 'cran:*')", 0, callback)
+        },
+        last: function(callback) {
+            client.get(
+                "meta:last-updated", callback)
+        }
+    }, function(err, meta) {
+        if (err) { throw(err); }
+        var summary = {
+            'name': process.env.SYSREQS_NAME || 'A sysreqs server',
+            'sysreqs-version': '0.0.2', // TODO: should read package.json
+            'sysreqs': meta.sysreqs,
+            'platforms': meta.platforms,
+            'scripts': meta.scripts,
+            'overrides': meta.overrides,
+            'last-updated': meta.last || 'never' };
+
+        res.set('Content-Type', 'application/json')
+	    .send(JSON.stringify(summary));
+    })
+});
+
+// ------------------------------------------------------------------
 // Download all entries from GitHub, and put them into the
 // Redis DB
 
