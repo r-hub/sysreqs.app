@@ -1,14 +1,37 @@
 
-# sysreqs(7) &mdash; Map SystemRequirements for R packages
+# sysreqs(7) &mdash; Map System Requirements for R packages
 
 ## SYNOPSIS
 
-`GET /`  
-`GET /get`/&lt;mapping>  
-`GET /list`  
-`GET /map`/&lt;string>  
-`GET /populate`  
-`GET /pkg`/&lt;package>[`/`&lt;os>]
+### Summary:
+
+`GET /`
+
+### Querying records:
+
+`GET /sysreq`  
+`GET /sysreq/<id>`
+
+`GET /platform`  
+`GET /platform/<id>`
+
+`GET /script`  
+`GET /script/<id>`
+
+`GET /override`__
+`GET /override/<id>`
+
+### Mapping strings:
+
+`GET /map/<string>`  
+`GET /map/platform/<platform>/<string>`  
+`POST /map`  
+`POST /map/platform/<platform>`
+
+### Querying CRAN packages:
+
+`GET /pkg/<package>`  
+`GET /pkg/platform/<platform>/<package>`
 
 ## DESCRIPTION
 
@@ -31,49 +54,68 @@ encoded.
 
 ## API
 
-* `GET /`  
-   This page.
+### Summary:
 
-* `GET /get` / &lt;mapping>  
-  Retrieve a complete mapping entry by its name.
+`GET /`  
+TODO
 
-* `GET /list`  
-  List all mapping entries.
+### Querying records:
 
-* `GET /map` / &lt;string>  
-  Map a `SystemRequirements` field to canonical entries. It returns a list
-  of full entries. &lt;string> may contains arbitrary characters, but potentially
-  it has to be URL encoded.
+`GET /sysreq/list`  
+TODO
 
-* `GET /populate`  
-  Refresh the database from the `r-hub/sysreqs` repository
-  at GitHub.
+`GET /sysreq/get/<id>`  
+TODO
 
-* `GET /pkg` / &lt;package>  
-  Map a single R packge, potentially on a single operating system.
-  &lt;package> must be a single CRAN package.
+`GET /platform/list`  
+TODO
 
-* `GET /pkg` / &lt;package>  / &lt;os>   
-  Get the operating system specific packages that are needed for a CRAN package.
+`GET /platform/get/<id>`  
+TODO
+
+`GET /script/list`  
+TODO
+
+`GET /script/get/<id>`  
+TODO
+
+`GET /override`__
+TODO
+
+`GET /override/<id>`__
+TODO
+
+### Mapping strings:
+
+`GET /map/<string>`  
+TODO
+
+`GET /map/platform/<platform>/<string>`  
+TODO
+
+`POST /map`  
+TODO
+
+`POST /map/platform/<platform>`  
+TODO
+
+### Querying CRAN packages:
+
+`GET /pkg/<package>`  
+TODO
+
+`GET /pkg/platform/<platform>/<package>`  
+TODO
 
 ## EXAMPLES
 
-httr::GET("[http://sysreqs.r-hub.org/get/fftw3](/get/fftw3)")  
-httr::GET("[http://sysreqs.r-hub.org/get/python-2.7](/get/python-2.7)")  
-
-httr::GET("[http://sysreqs.r-hub.org/list](/list)")  
-
-httr::GET("[http://sysreqs.r-hub.org/map/Python%20(>=2.76)](/map/Python%20(>=2.76%29)")  
-httr::GET("[http://sysreqs.r-hub.org/map/GNU make](/map/GNU make)")
-
-httr::GET("[http://sysreqs.r-hub.org/pkg/igraph](/pkg/igraph)")  
-httr::GET("[http://sysreqs.r-hub.org/pkg/openssl](/pkg/openssl)")
+TODO
 
 ## CONTRIBUTIONS
 
 You can contribute to **sysreqs** by
-[reporting an issue](https://github.com/r-hub/sysreqs/issues),
-or by [sending a pull request](https://github.com/r-hub/sysreqs).
+[reporting an issue](https://github.com/r-hub/sysreqsdb/issues),
+or by [sending a pull request](https://github.com/r-hub/sysreqsdb).
 
 ## AUTHOR
 
@@ -85,7 +127,7 @@ in the [r-hub](https://r-hub.org) project, funded by the
 
 ## COPYRIGHT
 
-**sysreqs** is Copyright (c) 2015-2016
+**sysreqs** is Copyright (c) 2015-2019
 [R Consortium](https://www.r-consortium.org/).
 
 ## SEE ALSO
