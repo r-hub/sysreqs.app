@@ -10,28 +10,30 @@
 ### Querying records:
 
 `GET /sysreq`  
-`GET /sysreq/<id>`
+`GET /sysreq/:id`
 
 `GET /platform`  
-`GET /platform/<id>`
+`GET /platform/:id`
 
 `GET /script`  
-`GET /script/<id>`
+`GET /script/:id`
 
 `GET /override`__
-`GET /override/<id>`
+`GET /override/:id`
 
 ### Mapping strings:
 
-`GET /map/<string>`  
-`GET /map/platform/<platform>/<string>`  
+`GET /map/:string`  
+`GET /map/platform/:platform/:string`  
 `POST /map`  
-`POST /map/platform/<platform>`
+`POST /map/platform/:platform`
 
 ### Querying CRAN packages:
 
-`GET /pkg/<package>`  
-`GET /pkg/platform/<platform>/<package>`
+`GET /pkg/:package`  
+`GET /pkg/platform/:platform/:package`
+`POST /pkg`__
+`POST /pkg/:platform`
 
 ## DESCRIPTION
 
@@ -64,47 +66,54 @@ TODO
 `GET /sysreq/list`  
 TODO
 
-`GET /sysreq/get/<id>`  
+`GET /sysreq/get/:id`  
 TODO
 
 `GET /platform/list`  
 TODO
 
-`GET /platform/get/<id>`  
+`GET /platform/get/:id`  
 TODO
 
 `GET /script/list`  
 TODO
 
-`GET /script/get/<id>`  
+`GET /script/get/:id`  
 TODO
 
 `GET /override`__
 TODO
 
-`GET /override/<id>`__
+`GET /override/:id`__
 TODO
 
 ### Mapping strings:
 
-`GET /map/<string>`  
+`GET /map/:string`
+String has to be URL encoded.
 TODO
 
-`GET /map/platform/<platform>/<string>`  
-TODO
+`GET /map/platform/:platform/:string`  
+String has to be URL encoded.
 
 `POST /map`  
 TODO
 
-`POST /map/platform/<platform>`  
+`POST /map/platform/:platform`  
 TODO
 
 ### Querying CRAN packages:
 
-`GET /pkg/<package>`  
+`GET /pkg/:package`  
 TODO
 
-`GET /pkg/platform/<platform>/<package>`  
+`GET /pkg/platform/:platform/:package`  
+TODO
+
+`POST /pkg`__
+TODO
+
+`POST /pkg/:platform`
 TODO
 
 ## EXAMPLES

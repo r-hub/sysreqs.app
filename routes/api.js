@@ -21,7 +21,7 @@ var cran_sysreqs_platform = require('../lib/cran-sysreqs-platform');
 // ------------------------------------------------------------------
 // Summary
 
-router.get("/", function(req, res) {
+router.get("/", function(req, res, next) {
     async.parallel({
         sysreqs: function(callback) {
             client.eval(
@@ -44,7 +44,7 @@ router.get("/", function(req, res) {
                 "meta:last-updated", callback)
         }
     }, function(err, meta) {
-        if (err) { throw(err); }
+        if (err) { return next(err); }
         var summary = {
             'name': process.env.SYSREQS_NAME || 'A sysreqs server',
             'sysreqs-version': '0.0.2', // TODO: should read package.json
@@ -55,7 +55,7 @@ router.get("/", function(req, res) {
             'last-updated': meta.last || 'never' };
 
         res.set('Content-Type', 'application/json')
-	    .send(JSON.stringify(summary));
+	    .send(summary);
     })
 });
 
@@ -73,17 +73,34 @@ router.get("/populate", function(req, res) {
 })
 
 // ------------------------------------------------------------------
+// List canonical mappings
+
+router.get('/sysreq', function(req, res, next) {
+    var limit = req.query.limit || 10;
+    var offset = req.query.offset || 0;
+    toArray(
+	client.scan({ pattern: "sysreq:*" }),
+	function(err, arr) {
+	    if (err) { return next(err); }
+	    arr = arr.map(function(x) { return x.replace("sysreq:", "") });
+	    arr.sort();
+	    res.set('Content-Type', 'application/json')
+		.send(arr);
+	}
+    )
+})
+
+// ------------------------------------------------------------------
 // Get a canonical mapping
 
-router.get(new RegExp('^/get/([-\\w\\._]+)$'), function(req, res) {
-    client.get('sysreq:' + req.params[0], function(err, entry) {
-	if (err || entry === null) {
+router.get('/sysreq/:id', function(req, res, next) {
+    client.get('sysreq:' + req.params.id, function(err, entry) {
+        if (err) { return next(err); }
+        if (entry === null) {
 	    res.status(404)
-		.render('error', {
-		    message: 'sysreq not found',
-		    error: { }
-		});
-
+	        .set('Content-Type', 'application/json')
+                .send({ "status": "error",
+                        "message": "sysreq not found" });
 	} else {
 	    res.set('Content-Type', 'application/json')
 		.send(entry);
@@ -92,47 +109,114 @@ router.get(new RegExp('^/get/([-\\w\\._]+)$'), function(req, res) {
 })
 
 // ------------------------------------------------------------------
-// List canonical mappings
+// List platforms
 
-router.get('/list', function(req, res) {
-    var limit = req.query.limit || 10;
-    var offset = req.query.offset || 0;
+router.get('/platform', function(req, res, next) {
     toArray(
-	client.scan({ pattern: "sysreq:*" }),
+	client.scan({ pattern: "platform:*" }),
 	function(err, arr) {
-	    if (err) {
-		res.status(500)
-		    .render('error', {
-			message: 'cannot connect to database',
-			error: { }
-		    });
-
-	    } else {
-		arr = arr.map(function(x) { return x.replace("sysreq:", "") });
-		arr.sort();
-		res.set('Content-Type', 'application/json')
-		    .send(arr);
+            if (err) { return next(err); }
+	    arr = arr.map(function(x) { return x.replace("platform:", "") });
+	    arr.sort();
+	    res.set('Content-Type', 'application/json')
+		.send(arr);
 	    }
-	}
     )
+})
+
+// ------------------------------------------------------------------
+// Get a platform
+
+router.get('/platform/:id', function(req, res, next) {
+    client.get('platform:' + req.params.id, function(err, entry) {
+        if (err) { return next(err); }
+	if (entry === null) {
+	    res.status(404)
+	        .set('Content-Type', 'application/json')
+                .send({ "status": "error",
+                        "message": "platform not found" });
+	} else {
+	    res.set('Content-Type', 'application/json')
+		.send(entry);
+	}
+    });
+});
+
+// ------------------------------------------------------------------
+// List scripts
+
+router.get('/script', function(req, res, next) {
+    toArray(
+	client.scan({ pattern: "script:*" }),
+	function(err, arr) {
+            if (err) { return next(err); }
+	    arr = arr.map(function(x) { return x.replace("script:", "") });
+	    arr.sort();
+	    res.set('Content-Type', 'application/json')
+		.send(arr);
+	    }
+    )
+})
+
+// ------------------------------------------------------------------
+// Get a script
+
+router.get('/script/:id', function(req, res, next) {
+    client.get('script:' + req.params.id, function(err, entry) {
+        if (err) { return next(err); }
+	if (entry === null) {
+	    res.status(404)
+	        .set('Content-Type', 'application/json')
+                .send({ "status": "error",
+                        "message": "script not found" });
+	} else {
+	    res.set('Content-Type', 'application/text')
+		.send(entry);
+	}
+    })
+})
+
+// ------------------------------------------------------------------
+// List overrides
+
+router.get('/override', function(req, res, next) {
+    toArray(
+	client.scan({ pattern: "cran:*" }),
+	function(err, arr) {
+            if (err) { return next(err); }
+	    arr = arr.map(function(x) { return x.replace("cran:", "") });
+	    arr.sort();
+	    res.set('Content-Type', 'application/json')
+		.send(arr);
+	    }
+    )
+})
+
+// ------------------------------------------------------------------
+// Get a script
+
+router.get('/override/:id', function(req, res, next) {
+    client.get('cran:' + req.params.id, function(err, entry) {
+        if (err) { return next(err); }
+	if (entry === null) {
+	    res.status(404)
+	        .set('Content-Type', 'application/json')
+                .send({ "status": "error",
+                        "message": "override not found" });
+	} else {
+	    res.set('Content-Type', 'application/json')
+		.send(entry);
+	}
+    })
 })
 
 // ------------------------------------------------------------------
 // Map a SystemRequirements field to canonical system requirement names
 // We need to load all records from the Redis DB, and search them
 
-var re1 = new RegExp('^/map/(.*)$');
-router.get(re1, function(req, res) {
-    query = req.params[0];
-    map(client, query, function(err, result) {
-	if (err) {
-	    res.status(404)
-		.render('error', {
-		    message: 'sysreq not found',
-		    error: { }
-		});
-	    return;
-	}
+router.get('/map/:string', function(req, res, next) {
+    map(client, req.params.string, function(err, result) {
+	if (err) { return next(err); }
 	res.set('Content-Type', 'application/json')
 	    .send(result);
     })
@@ -141,23 +225,20 @@ router.get(re1, function(req, res) {
 // ------------------------------------------------------------------
 // Like /map, but for a specific platform
 
-var re4 = new RegExp('^/map-platform/(.*)/(.*)$');
+router.get('/map/platform/:platform/:string', function(req, res, next) {
 
-router.get(re4, function(req, res) {
-
-    var query = req.params[1];
+    var query = req.params.string;
 
     map(client, query, function(err, result) {
-	if (err) {
+	if (err) { return next(err); }
+	get_platform(req.params.platform, function(err, platform) {
+            if (err) { return next(err); }
+            if (!platform) {
 	    res.status(404)
-		.render('error', {
-		    message: 'sysreq not found',
-		    error: { }
-		});
-	    return;
-	}
-	get_platform(req.params[0], function(err, platform) {
-	    if (err || ! platform) { res.end("Unknown platform"); return; }
+	        .set('Content-Type', 'application/json')
+                .send({ "status": "error",
+                        "message": "platform not found" });
+            }
 	    async.mapSeries(
 		result,
 		function(x, cb) { return match_platform(x, platform, cb) },
@@ -171,143 +252,45 @@ router.get(re4, function(req, res) {
 })
 
 // ------------------------------------------------------------------
-// Get canonical system requirement names for a CRAN package
-// The latest version is used by default. Version numbers can be
-// given after a dash.
-//
-// First check if the system requirement is in the overrides.
-// If yes, then just use that. Otherwise use crandb to get the
-// SystemRequirements field.
-//
-// The mapping are cached in the DB. (TODO)
+// Like GET /map, but this supports multiple strings
 
-var re2 = new RegExp('^/pkg/([-\\w\\.,]+)$');
-
-router.get(re2, function(req, res) {
-    var pkgs = req.params[0].split(',');
-    async.map(
-	pkgs,
-	function(item, callback) {
-	    cran_sysreqs(item, function(err, res) {
-		if (err) {
-		    callback(null, []);
-		} else {
-		    callback(null, res);
-		}
-	    })
-	},
-	function(err, results) {
-	    if (err) {
-		return res.status(404)
-		    .render('error', {
-			message: 'sysreq not found',
-			error: err
-		    });
-	    }
-	    var merged = [].concat.apply([], results);
-	    res.set('Content-Type', 'application/json')
-		.send(merged);
-	})
-    ;
-});
-
-// ------------------------------------------------------------------
-// Get OS dependent requirements for a CRAN package
-
-var re3 = new RegExp('^/pkg/([-\\w\\.,]+)/(.*)$');
-
-router.get(re3, function(req, res) {
-    var pkgs = req.params[0].split(',');
-    var platform = req.params[1];
-    async.map(
-	pkgs,
-	function(item, callback) {
-	    cran_sysreqs_platform(item, platform, function(err, res) {
-		if (err) {
-		    callback(null, []);
-		} else {
-		    callback(null, res);
-		}
-	    });
-	},
-	function(err, results) {
-	    if (err) {
-		return res.status(404)
-		    .render('error', {
-			message: 'platform not found',
-			error: { }
-		    });
-	    }
-	    var merged = [].concat.apply([], results);
-	    res.set('Content-Type', 'application/json')
-		.send(merged);
-	}
-    );
-})
-
-
-// ------------------------------------------------------------------
-// Get a platform
-
-router.get(new RegExp('^/platform/get/([-\\w\\._]+)$'), function(req, res) {
-    client.get('platform:' + req.params[0], function(err, entry) {
-	if (err || entry === null) {
-	    res.status(404)
-		.render('error', {
-		    message: err,
-		    error: { }
-		});
-
-	} else {
-	    res.set('Content-Type', 'application/json')
-		.send(entry);
-	}
-    });
-});
-
-// ------------------------------------------------------------------
-// List platforms
-
-router.get('/platform/list', function(req, res) {
-    var limit = req.query.limit || 10;
-    var offset = req.query.offset || 0;
-    toArray(
-	client.scan({ pattern: "platform:*" }),
-	function(err, arr) {
-	    if (err) {
-		res.status(500)
-		    .render('error', {
-			message: 'cannot connect to database',
-			error: { }
-		    });
-
-	    } else {
-		arr = arr.map(function(x) { return x.replace("platform:", "") });
-		arr.sort();
-		res.set('Content-Type', 'application/json')
-		    .send(arr);
-	    }
-	}
-    )
+router.post('/map', function(req, res, next) {
+    // TODO
 })
 
 // ------------------------------------------------------------------
-// Get a script
+// Like GET /map/platformd/:platform but this supports multiple strings
 
-router.get(new RegExp('/script/([-\\w\\._]+)$'), function(req, res) {
-    client.get('script:' + req.params[0], function(err, entry) {
-	if (err || entry === null) {
-	    res.status(404)
-		.render('error', {
-		    message: 'script not found',
-		    error: { }
-		});
+router.post('/map/platform/:platform', function(req, res, next) {
+    // TODO
+})
 
-	} else {
-	    res.set('Content-Type', 'application/text')
-		.send(entry);
-	}
-    });
-});
+// ------------------------------------------------------------------
+// Map a CRAN package
+
+router.get('/pkg/:package', function(req, res, next) {
+    // TODO
+})
+
+// ------------------------------------------------------------------
+// Map a CRAN package, on a platform
+
+router.get('/pkg/:platform/:package', function(req, res, next) {
+
+})
+
+// ------------------------------------------------------------------
+// Map multiple CRAN packages
+
+router.post('/pkg', function(req, res, next) {
+    // TODO
+})
+
+// ------------------------------------------------------------------
+// Map multiple CRAN packages, on a platform
+
+router.post('/pkg/:platform', function(req, res, next) {
+    // TODO
+})
 
 module.exports = router;
