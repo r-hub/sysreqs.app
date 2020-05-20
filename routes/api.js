@@ -142,32 +142,13 @@ router.get(re4, function(req, res) {
 
 var re2 = new RegExp('^/pkg/([-\\w\\.,]+)$');
 
-router.get(re2, function(req, res) {
-    var pkgs = req.params[0].split(',');
-    async.map(
-	pkgs,
-	function(item, callback) {
-	    cran_sysreqs(item, function(err, res) {
-		if (err) {
-		    callback(null, []);
-		} else {
-		    callback(null, res);
-		}
-	    })
-	},
-	function(err, results) {
-	    if (err) {
-		return res.status(404)
-		    .render('error', {
-			message: 'sysreq not found',
-			error: err
-		    });
-	    }
-	    var merged = [].concat.apply([], results);
-	    res.set('Content-Type', 'application/json')
-		.send(merged);
-	})
-    ;
+router.get(re2, function(req, res, next) {
+    var pkgs = req.params[0];
+    cran_sysreqs(pkgs, function(err, results) {
+        if (err) { return(next(err)); }
+	res.set('Content-Type', 'application/json')
+	    .send(results);
+    })
 });
 
 // ------------------------------------------------------------------
@@ -175,35 +156,15 @@ router.get(re2, function(req, res) {
 
 var re3 = new RegExp('^/pkg/([-\\w\\.,]+)/(.*)$');
 
-router.get(re3, function(req, res) {
-    var pkgs = req.params[0].split(',');
+router.get(re3, function(req, res, next) {
+    var pkgs = req.params[0];
     var platform = req.params[1];
-    async.map(
-	pkgs,
-	function(item, callback) {
-	    cran_sysreqs_platform(item, platform, function(err, res) {
-		if (err) {
-		    callback(null, []);
-		} else {
-		    callback(null, res);
-		}
-	    });
-	},
-	function(err, results) {
-	    if (err) {
-		return res.status(404)
-		    .render('error', {
-			message: 'platform not found',
-			error: { }
-		    });
-	    }
-	    var merged = [].concat.apply([], results);
-	    res.set('Content-Type', 'application/json')
-		.send(merged);
-	}
-    );
+    cran_sysreqs_platform(pkgs, platform, function(err, results) {
+        if (err) { return(next(err)); }
+	res.set('Content-Type', 'application/json')
+	    .send(results);
+    })
 })
-
 
 // ------------------------------------------------------------------
 // Get a platform
