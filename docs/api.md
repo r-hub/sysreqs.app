@@ -24,7 +24,7 @@ and various packages specify the same system requirements differently.
 entries, and their resolutions on various operating systems. The
 data itself is stored in a GitHub repository, at
 https://github.com/r-hub/sysreqs, and its public API is at
-https://sysreqs.r-hub.org.
+https://sysreqs.r-hub.io.
 
 All endpoint responses (except for the `/` help page) are JSON
 encoded.
@@ -58,16 +58,16 @@ encoded.
 
 ## EXAMPLES
 
-httr::GET("[http://sysreqs.r-hub.org/get/fftw3](/get/fftw3)")  
-httr::GET("[http://sysreqs.r-hub.org/get/python-2.7](/get/python-2.7)")  
+httr::GET("[http://sysreqs.r-hub.io/get/fftw3](/get/fftw3)")  
+httr::GET("[http://sysreqs.r-hub.io/get/python-2.7](/get/python-2.7)")  
 
-httr::GET("[http://sysreqs.r-hub.org/list](/list)")  
+httr::GET("[http://sysreqs.r-hub.io/list](/list)")  
 
-httr::GET("[http://sysreqs.r-hub.org/map/Python%20(>=2.76)](/map/Python%20(>=2.76%29)")  
-httr::GET("[http://sysreqs.r-hub.org/map/GNU make](/map/GNU make)")
+httr::GET("[http://sysreqs.r-hub.io/map/Python%20(>=2.76)](/map/Python%20(>=2.76%29)")  
+httr::GET("[http://sysreqs.r-hub.io/map/GNU make](/map/GNU make)")
 
-httr::GET("[http://sysreqs.r-hub.org/pkg/igraph](/pkg/igraph)")  
-httr::GET("[http://sysreqs.r-hub.org/pkg/openssl](/pkg/openssl)")
+httr::GET("[http://sysreqs.r-hub.io/pkg/igraph](/pkg/igraph)")  
+httr::GET("[http://sysreqs.r-hub.io/pkg/openssl](/pkg/openssl)")
 
 ## CONTRIBUTIONS
 
