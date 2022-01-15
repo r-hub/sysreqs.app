@@ -15,7 +15,7 @@
     "got": "~3.2.0",
     "hjs": "~0.0.6",
     "is-array": "^1.0.1",
-    "marked": "^0.6.3",
+    "marked": "^4.0.10",
     "morgan": "^1.10.0",
     "redis": "~2.4.2",
     "redis-scanstreams": "^1.0.3",
